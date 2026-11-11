@@ -5,126 +5,302 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.regex.*;
 
-public class Main {
-    static Scanner sc = new Scanner(System.in);
-    static List<Book> books = new ArrayList<>();
+interface Drawable {
+    void draw();
+}
 
-    public static void main(String[] args) {
+abstract class Shape implements Drawable, Serializable {
+    private static final long serialVersionUID = 1L;
+    protected String shapeColor;
+
+    public Shape(String shapeColor) {
+        this.shapeColor = shapeColor;
+    }
+
+    public String getShapeColor() {
+        return shapeColor;
+    }
+
+    public abstract double calcArea();
+
+    public String toString() {
+        return "Колір фігури: " + shapeColor;
+    }
+}
+
+class Rectangle extends Shape {
+    private double a, b;
+
+    public Rectangle(String color, double a, double b) {
+        super(color);
+        this.a = a;
+        this.b = b;
+    }
+
+    public double calcArea() {
+        return a * b;
+    }
+
+    public void draw() {
+        System.out.println(this);
+    }
+
+    public String toString() {
+        return "Прямокутник (колір: " + shapeColor +
+                ", площа: " + calcArea() + ")";
+    }
+}
+
+class Triangle extends Shape {
+    private double base, height;
+
+    public Triangle(String color, double base, double height) {
+        super(color);
+        this.base = base;
+        this.height = height;
+    }
+
+    public double calcArea() {
+        return 0.5 * base * height;
+    }
+
+    public void draw() {
+        System.out.println(this);
+    }
+
+    public String toString() {
+        return "Трикутник (колір: " + shapeColor +
+                ", площа: " + calcArea() + ")";
+    }
+}
+
+class Circle extends Shape {
+    private double radius;
+
+    public Circle(String color, double radius) {
+        super(color);
+        this.radius = radius;
+    }
+
+    public double calcArea() {
+        return Math.PI * radius * radius;
+    }
+
+    public void draw() {
+        System.out.println(this);
+    }
+
+    public String toString() {
+        return "Коло (колір: " + shapeColor +
+                ", площа: " + calcArea() + ")";
+    }
+}
+
+class Model {
+    private Shape[] shapes;
+
+    public Model(Shape[] shapes) {
+        this.shapes = shapes;
+    }
+
+    public Shape[] getShapes() {
+        return shapes;
+    }
+
+    public void setShapes(Shape[] shapes) {
+        this.shapes = shapes;
+    }
+
+    public double getTotalArea() {
+        double sum = 0;
+        for (Shape shape : shapes) {
+            sum += shape.calcArea();
+        }
+        return sum;
+    }
+
+    public double getAreaByType(String typeName) {
+        double sum = 0;
+        for (Shape shape : shapes) {
+            if (shape.getClass().getSimpleName().equalsIgnoreCase(typeName)) {
+                sum += shape.calcArea();
+            }
+        }
+        return sum;
+    }
+
+    public void sortShapesByArea() {
+        Arrays.sort(shapes, Comparator.comparingDouble(Shape::calcArea));
+    }
+
+    public void sortShapesByColor() {
+        Arrays.sort(shapes, Comparator.comparing(Shape::getShapeColor));
+    }
+}
+
+class View {
+    public void printShapes(Shape[] shapes) {
+        for (Shape shape : shapes) {
+            shape.draw();
+        }
+        System.out.println();
+    }
+
+    public void printText(String text) {
+        System.out.println(text);
+    }
+}
+
+class Controller {
+    private Model model;
+    private View view;
+    private Scanner scanner = new Scanner(System.in);
+
+    public Controller(Model model, View view) {
+        this.model = model;
+        this.view = view;
+    }
+
+    private String input(String message) {
+        System.out.print(message);
+        return scanner.nextLine().trim();
+    }
+
+    public void run() {
         while (true) {
-            System.out.println("\n1 - Найдовший рядок за кількістю слів");
-            System.out.println("2 - Додати книгу");
-            System.out.println("3 - Показати книги");
-            System.out.println("4 - Зберегти книги");
-            System.out.println("5 - Завантажити книги");
-            System.out.println("6 - Зашифрувати файл");
-            System.out.println("7 - Розшифрувати файл");
-            System.out.println("8 - Порахувати HTML-теги");
-            System.out.println("0 - Вихід");
-            System.out.print("Вибір: ");
+            System.out.println("\n--- МЕНЮ ---");
+            System.out.println("1. Показати фігури");
+            System.out.println("2. Сумарна площа");
+            System.out.println("3. Площа фігур заданого виду");
+            System.out.println("4. Сортувати за площею");
+            System.out.println("5. Сортувати за кольором");
+            System.out.println("6. Зберегти фігури у файл");
+            System.out.println("7. Завантажити фігури з файлу");
+            System.out.println("8. Рядок з найбільшою кількістю слів");
+            System.out.println("9. Зашифрувати файл");
+            System.out.println("10. Розшифрувати файл");
+            System.out.println("11. Підрахувати HTML-теги");
+            System.out.println("0. Вихід");
 
-            String choice = sc.nextLine();
+            String choice = input("Вибір: ");
 
             try {
                 switch (choice) {
-                    case "1" -> longestLine();
-                    case "2" -> addBook();
-                    case "3" -> books.forEach(System.out::println);
-                    case "4" -> {
-                        FileManager.saveBooks(ask("Файл для збереження: "), books);
-                        System.out.println("Збережено");
-                    }
-                    case "5" -> {
-                        books = FileManager.loadBooks(ask("Файл для читання: "));
-                        System.out.println("Завантажено: " + books.size());
-                    }
-                    case "6" -> crypt(true);
-                    case "7" -> crypt(false);
-                    case "8" -> tags();
-                    case "0" -> {
+                    case "1":
+                        view.printShapes(model.getShapes());
+                        break;
+                    case "2":
+                        view.printText("Сумарна площа: " + model.getTotalArea());
+                        break;
+                    case "3":
+                        String type = input("Тип (Circle, Triangle, Rectangle): ");
+                        view.printText("Площа: " + model.getAreaByType(type));
+                        break;
+                    case "4":
+                        model.sortShapesByArea();
+                        view.printShapes(model.getShapes());
+                        break;
+                    case "5":
+                        model.sortShapesByColor();
+                        view.printShapes(model.getShapes());
+                        break;
+                    case "6":
+                        FileManager.saveShapes(
+                                input("Шлях для збереження: "), model.getShapes());
+                        view.printText("Фігури збережено");
+                        break;
+                    case "7":
+                        model.setShapes(FileManager.loadShapes(
+                                input("Шлях до файлу: ")));
+                        view.printText("Фігури завантажено");
+                        view.printShapes(model.getShapes());
+                        break;
+                    case "8":
+                        longestLine();
+                        break;
+                    case "9":
+                        crypt(true);
+                        break;
+                    case "10":
+                        crypt(false);
+                        break;
+                    case "11":
+                        countTags();
+                        break;
+                    case "0":
                         return;
-                    }
-                    default -> System.out.println("Немає такого пункту");
+                    default:
+                        view.printText("Невірний пункт меню");
                 }
             } catch (Exception e) {
-                System.out.println("Помилка: " + e.getMessage());
+                view.printText("Помилка: " + e.getMessage());
             }
         }
     }
 
-    static String ask(String text) {
-        System.out.print(text);
-        return sc.nextLine().trim();
-    }
-
-    static void longestLine() throws IOException {
-        Path path = Path.of(ask("Шлях до текстового файлу: "));
+    private void longestLine() throws IOException {
+        String filename = input("Шлях до текстового файлу: ");
         String longest = "";
-        int max = 0;
+        int maxWords = 0;
 
-        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+        try (BufferedReader reader = Files.newBufferedReader(
+                Path.of(filename), StandardCharsets.UTF_8)) {
             String line;
 
             while ((line = reader.readLine()) != null) {
-                String trimmed = line.trim();
-                int words = trimmed.isEmpty() ? 0 : trimmed.split("\\s+").length;
+                String text = line.trim();
+                int count = text.isEmpty() ? 0 : text.split("\\s+").length;
 
-                if (words > max) {
-                    max = words;
+                if (count > maxWords) {
+                    maxWords = count;
                     longest = line;
                 }
             }
         }
 
-        System.out.println("Слів: " + max);
+        System.out.println("Найбільша кількість слів: " + maxWords);
         System.out.println("Рядок: " + longest);
     }
 
-    static void addBook() {
-        String title = ask("Назва книги: ");
-        String author = ask("Автор: ");
+    private void crypt(boolean encrypt) throws IOException {
+        String source = input("Вхідний файл: ");
+        String target = input("Вихідний файл: ");
+        String key = input("Ключовий символ: ");
 
-        if (title.isEmpty() || author.isEmpty()) {
-            throw new IllegalArgumentException("Заповніть обидва поля");
+        if (key.length() != 1) {
+            throw new IllegalArgumentException("Введіть один символ");
         }
 
-        books.add(new Book(title, author));
-    }
-
-    static void crypt(boolean encrypt) throws IOException {
-        String input = ask("Вхідний файл: ");
-        String output = ask("Вихідний файл: ");
-        String keyText = ask("Ключовий символ: ");
-
-        if (keyText.length() != 1) {
-            throw new IllegalArgumentException("Потрібен один символ ключа");
+        if (Path.of(source).toAbsolutePath().normalize().equals(
+                Path.of(target).toAbsolutePath().normalize())) {
+            throw new IllegalArgumentException("Файли мають бути різними");
         }
 
-        int shift = keyText.charAt(0);
-
-        if (Path.of(input).toAbsolutePath().normalize()
-                .equals(Path.of(output).toAbsolutePath().normalize())) {
-            throw new IllegalArgumentException("Вхідний і вихідний файли мають відрізнятися");
-        }
+        int shift = key.charAt(0);
 
         if (encrypt) {
-            try (Reader r = Files.newBufferedReader(Path.of(input), StandardCharsets.UTF_8);
-                 Writer w = new ShiftWriter(
-                         Files.newBufferedWriter(Path.of(output), StandardCharsets.UTF_8), shift)) {
-                copy(r, w);
+            try (Reader reader = Files.newBufferedReader(
+                    Path.of(source), StandardCharsets.UTF_8);
+                 Writer writer = new ShiftWriter(
+                         Files.newBufferedWriter(Path.of(target),
+                                 StandardCharsets.UTF_8), shift)) {
+                copy(reader, writer);
             }
         } else {
-            try (Reader r = new ShiftReader(
-                    Files.newBufferedReader(Path.of(input), StandardCharsets.UTF_8), shift);
-                 Writer w = Files.newBufferedWriter(Path.of(output), StandardCharsets.UTF_8)) {
-                copy(r, w);
+            try (Reader reader = new ShiftReader(
+                    Files.newBufferedReader(Path.of(source),
+                            StandardCharsets.UTF_8), shift);
+                 Writer writer = Files.newBufferedWriter(
+                         Path.of(target), StandardCharsets.UTF_8)) {
+                copy(reader, writer);
             }
         }
 
-        System.out.println("Готово");
+        System.out.println("Операцію виконано");
     }
 
-    static void copy(Reader reader, Writer writer) throws IOException {
-        char[] buffer = new char[2048];
+    private void copy(Reader reader, Writer writer) throws IOException {
+        char[] buffer = new char[1024];
         int count;
 
         while ((count = reader.read(buffer)) != -1) {
@@ -132,18 +308,19 @@ public class Main {
         }
     }
 
-    static void tags() throws Exception {
-        String url = ask("URL (Enter = https://example.com): ");
+    private void countTags() throws Exception {
+        String url = input("Введіть URL: ");
+        Map<String, Integer> tags = new TreeMap<>();
 
-        if (url.isEmpty()) {
-            url = "https://example.com";
-        }
+        Pattern pattern = Pattern.compile(
+                "<\\s*([a-zA-Z][a-zA-Z0-9:-]*)\\b[^>]*>");
 
-        Map<String, Integer> counts = new TreeMap<>();
-        Pattern pattern = Pattern.compile("<\\s*([a-zA-Z][a-zA-Z0-9:-]*)\\b[^>]*>");
+        var connection = URI.create(url).toURL().openConnection();
+        connection.setConnectTimeout(5000);
+        connection.setReadTimeout(5000);
 
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(URI.create(url).toURL().openStream(),
+                new InputStreamReader(connection.getInputStream(),
                         StandardCharsets.UTF_8))) {
 
             String line;
@@ -152,42 +329,31 @@ public class Main {
                 Matcher matcher = pattern.matcher(line);
 
                 while (matcher.find()) {
-                    counts.merge(matcher.group(1).toLowerCase(Locale.ROOT), 1, Integer::sum);
+                    String tag = matcher.group(1).toLowerCase(Locale.ROOT);
+                    tags.put(tag, tags.getOrDefault(tag, 0) + 1);
                 }
             }
         }
 
-        System.out.println("За назвою:");
-        counts.forEach((name, count) -> System.out.println(name + ": " + count));
+        System.out.println("\nЗа назвою:");
+        for (String tag : tags.keySet()) {
+            System.out.println(tag + ": " + tags.get(tag));
+        }
 
-        System.out.println("За частотою (зростання):");
-        counts.entrySet().stream()
-                .sorted(Comparator.<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue)
+        System.out.println("\nЗа частотою:");
+        tags.entrySet().stream()
+                .sorted(Comparator
+                        .comparingInt((Map.Entry<String, Integer> e) -> e.getValue())
                         .thenComparing(Map.Entry::getKey))
-                .forEach(e -> System.out.println(e.getKey() + ": " + e.getValue()));
-    }
-}
-
-class Book implements Serializable {
-    private static final long serialVersionUID = 1L;
-
-    String title;
-    String author;
-
-    Book(String title, String author) {
-        this.title = title;
-        this.author = author;
-    }
-
-    public String toString() {
-        return title + " — " + author;
+                .forEach(e -> System.out.println(
+                        e.getKey() + ": " + e.getValue()));
     }
 }
 
 class ShiftWriter extends FilterWriter {
-    private final int shift;
+    private int shift;
 
-    ShiftWriter(Writer writer, int shift) {
+    public ShiftWriter(Writer writer, int shift) {
         super(writer);
         this.shift = shift;
     }
@@ -196,21 +362,21 @@ class ShiftWriter extends FilterWriter {
         super.write((char) (c + shift));
     }
 
-    public void write(char[] data, int off, int len) throws IOException {
-        for (int i = off; i < off + len; i++) {
-            write(data[i]);
+    public void write(char[] chars, int offset, int length) throws IOException {
+        for (int i = offset; i < offset + length; i++) {
+            write(chars[i]);
         }
     }
 
-    public void write(String str, int off, int len) throws IOException {
-        write(str.toCharArray(), off, len);
+    public void write(String str, int offset, int length) throws IOException {
+        write(str.toCharArray(), offset, length);
     }
 }
 
 class ShiftReader extends FilterReader {
-    private final int shift;
+    private int shift;
 
-    ShiftReader(Reader reader, int shift) {
+    public ShiftReader(Reader reader, int shift) {
         super(reader);
         this.shift = shift;
     }
@@ -220,13 +386,35 @@ class ShiftReader extends FilterReader {
         return c == -1 ? -1 : (char) (c - shift);
     }
 
-    public int read(char[] data, int off, int len) throws IOException {
-        int n = super.read(data, off, len);
+    public int read(char[] chars, int offset, int length) throws IOException {
+        int count = super.read(chars, offset, length);
 
-        for (int i = off; i < off + Math.max(n, 0); i++) {
-            data[i] = (char) (data[i] - shift);
+        for (int i = offset; i < offset + Math.max(count, 0); i++) {
+            chars[i] = (char) (chars[i] - shift);
         }
 
-        return n;
+        return count;
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Shape[] shapes = {
+                new Rectangle("Red", 4, 5),
+                new Circle("Blue", 3),
+                new Triangle("Green", 3, 4),
+                new Rectangle("Yellow", 2, 2),
+                new Circle("Red", 5),
+                new Triangle("Blue", 4, 5),
+                new Rectangle("Green", 3, 6),
+                new Circle("Yellow", 2),
+                new Triangle("Red", 5, 5),
+                new Rectangle("Blue", 1, 10)
+        };
+
+        Model model = new Model(shapes);
+        View view = new View();
+        Controller controller = new Controller(model, view);
+        controller.run();
     }
 }
